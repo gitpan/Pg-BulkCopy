@@ -1,0 +1,28 @@
+---
+abstract: ~
+author:
+  - 'John Karr, C<< <brainbuz at brainbuz.org> >>'
+  - 'John Karr <brainbuz@brainbuz.org>'
+build_requires:
+  DBD::Pg: 0
+  ExtUtils::MakeMaker: 6.42
+  Moose: 0
+  Test::More: 0
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
+distribution_type: module
+generated_by: 'Module::Install version 1.00'
+license: gpl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Pg-BulkCopy
+no_index:
+  directory:
+    - inc
+    - t
+requires:
+  perl: 5.10.0
+resources:
+  license: http://opensource.org/licenses/gpl-license.php
+version: 0.14
