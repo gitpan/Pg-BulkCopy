@@ -1,5 +1,4 @@
 Changes
-ignore.txt
 inc/Module/AutoInstall.pm
 inc/Module/Install.pm
 inc/Module/Install/AutoInstall.pm
@@ -16,6 +15,7 @@ Makefile.PL
 MANIFEST
 META.yml
 README
+bin/pg_bulkcopy.pl
 sql/create_test.sql
 sql/dbitest.pl
 sql/poptestdb.pl
@@ -26,13 +26,14 @@ t/pod-coverage.t
 t/pod.t
 t2/01_simple.t
 t2/03_badrecords.t
+t2/05_moreopts.t
+t2/test.conf
 tdata/blob1.tsv
 tdata/errors_25.csv
 tdata/large_5_errrors.tsv
 tdata/t133992.tsv
-tdata/t157.csv
+tdata/t157a.csv
+tdata/t157b.csv
 tdata/blob2.csv
 tdata/errors_25.tsv
-tdata/shaved.csv
-tdata/t157b.csv
 harness.sh

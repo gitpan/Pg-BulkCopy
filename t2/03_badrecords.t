@@ -5,8 +5,8 @@ use Config::Std;
 use IhasQuery ;
 use File::Copy ;
 use strict ;
-
-use Test::More tests => 23;
+# 
+use Test::More tests => 27;
 #use Test::More 'no_plan' ;
 
 
@@ -28,13 +28,27 @@ my $tdata = "$pwd/tdata" ;
 read_config "$pwd/t2/test.conf" => my %config;
 
 # Extract the value of a key/value pair from a specified section...
-my $dbistr  = $config{DBI}{dbistr};
+my $dbistring  = $config{DBI}{dbistring};
 my $dbiuser  = $config{DBI}{dbiuser};
 my $dbipass = $config{DBI}{dbipass};
+
+# Suppress Errors from the console.
+# Comment to see all the debug and dbi errors as your test runs.
+open STDERR, ">>/dev/null" or die ;
 
 ########################################################################
 # END OF THE COMMON CODE
 #######
+
+unlink "$tdata/blob1.tsv.REJECTS" ;
+unlink "$tdata/pg_BulkCopy.ERR" ;
+unlink "$tdata/blob2.csv.REJECTS" ;
+unlink "$tdata/DUMP1.tsv" ;
+unlink "$tdata/DUMP1.csv" ;
+unlink "$tdata/DUMP1.csv.REJECTS" ;
+unlink "$tdata/DUMP1.tsv.REJECTS" ;
+unlink "$tdata/t133992.tsv.REJECTS" ;
+unlink "$tdata/test_bad5.err" ;
 
 # Run a basic test with the default tab seperated file.
 #  Checks that the right number of records imported, 
@@ -44,12 +58,13 @@ my $table = 'millions' ;
 my $filename = "errors_25.tsv" ;
 
 my $bad5 = Pg::BulkCopy->new(
-    dbistring => $dbistr,
+    dbistring => $dbistring,
     dbiuser   => $dbiuser,
     dbipass   => $dbipass,
     filename  => $filename,
+    errorlog  => 'test_bad5.err', 
     workingdir => "$tdata/",
-    debug      => 1 ,
+    debug      => 2 ,
     table     => $table, );
 
 my $millions = IhasQuery->new( $bad5->CONN(), 'millions' ) ;
@@ -73,12 +88,26 @@ like (  <FH> ,
         "reject matches: 25	Jubilee") ; 
 my $temp = <FH> ;
 my $len = length $temp ;
-say "Extra line $temp, $len" ;
 ok ( $len <= 1 , "Testing that if there is an extra line, it should be empty" ) ;
 ok( eof FH == 1 , "Confirm end of reject file" );                        
 
 close FH ;
 
+# The following are tests of the dbg function to insure that messages are logged at the correct level.
+# Here debug = 2 is tested.
+open FHL, "<$tdata/test_bad5.err" or die $! ;
+my (@FHL) = (<FHL>) ;
+close FHL ;
+my $lookedforit = 0 ;
+for ( @FHL ) { if ( $_ =~  m/1368689183/ ) { $lookedforit++ } }
+is ( $lookedforit, 1 , 'Found string from a reject 1 time in the error log.' ) ;
+$lookedforit = 0 ; 
+for ( @FHL ) { if ( $_ =~  m/9330515197/ ) { $lookedforit++ } }
+is ( $lookedforit, 0 , 'A record that was not a reject should not be in this error file.' ) ;
+$lookedforit = 0 ; 
+for ( @FHL ) { if ( $_ =~  m/Optionstr/ ) { $lookedforit++ } }
+ok ( $lookedforit > 0 , 'With debug set to 2 this string should be in the log.' ) ;
+$lookedforit = 0 ; 
 
 
 # Similar to above except that a different csv file is used.
@@ -118,11 +147,11 @@ close FH ;
 
 # This is just an extra test run of a different file.
 
-$filename = "t157.csv" ;
+$filename = "t157a.csv" ;
 $table = 'testing' ;
 
 my $PG_Test1 = Pg::BulkCopy->new(
-    dbistring => $dbistr,
+    dbistring => $dbistring,
     dbiuser   => $dbiuser,
     dbipass   => $dbipass,
     filename  => $filename,
@@ -130,18 +159,20 @@ my $PG_Test1 = Pg::BulkCopy->new(
     iscsv       => 1,
     table     => $table, );
 
-is( $PG_Test1->TRUNC(), 0, ) ;
+is( $PG_Test1->TRUNC(), 0, 'Confirm a TRUNC' ) ;
 is ( $PG_Test1->LOAD() , 1 , 'Return Status should be 1' ) ;
-my $testing1 = IhasQuery->new( $PG_Test1->CONN() , 'testing' ) ;
-is ( $testing1->count() , 156 , "Should load 156" ) ;
+my $qPG_Test1 = IhasQuery->new( $PG_Test1->CONN() , 'testing' ) ;
+is ( $qPG_Test1->count() , 156 , "Should have loaded 156 records." ) ;
 
-unlink "$tdata/blob1.tsv.REJECTS" ;
-unlink "$tdata/pg_BulkCopy.ERR" ;
-unlink "$tdata/blob2.csv.REJECTS" ;
-unlink "$tdata/DUMP1.tsv" ;
-unlink "$tdata/DUMP1.csv" ;
-unlink "$tdata/DUMP1.csv.REJECTS" ;
-unlink "$tdata/DUMP1.tsv.REJECTS" ;
-unlink "$tdata/t133992.tsv.REJECTS" ;
+# This is a further test of the dbg function. 
+# Here the default debug = 1 is tested (it is set by default not explicitly). 
+my $errfile = $PG_Test1->errorlog() ;
+open FH2, "<$errfile" ;
+my (@FH2) = (<FH2>) ;
+close FH2 ;
+$lookedforit = 0 ;
+for ( @FH2 )  { if ( $_ =~  m/Optionstr/ ) { $lookedforit++ } }
+is ( $lookedforit, 0 , 'With debug set to 1 the item searched for in log should not be there.' ) ;
+$lookedforit = 0 ; 
 
 

@@ -4,8 +4,12 @@ author:
   - 'John Karr, C<< <brainbuz at brainbuz.org> >>'
   - 'John Karr <brainbuz@brainbuz.org>'
 build_requires:
+  Config::Merge: 0
+  Config::Std: 0
   DBD::Pg: 0
   ExtUtils::MakeMaker: 6.42
+  FileHandle: 0
+  IhasQuery: 0
   Moose: 0
   Test::More: 0
 configure_requires:
@@ -25,4 +29,4 @@ requires:
   perl: 5.10.0
 resources:
   license: http://opensource.org/licenses/gpl-license.php
-version: 0.14
+version: 0.15

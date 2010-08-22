@@ -1,4 +1,4 @@
-***** WARNING version .013 is very incomplete. *****
+***** WARNING version .015 is still incomplete. *****
 ***** There is no pg_bulkcopy.pl included.
 
 
@@ -20,7 +20,7 @@ To install this module, run the following commands:
 	
 TESTING
 
-This module can only be tested when run from a postgres server with access to a database, therefore the tests in t run at install time are minimal. To properly test this bundle you must create a database and manually run the tests.  	
+This module can only be tested when run from a postgres server with access to a database, therefore the tests in t run at install time are minimal. To properly test this bundle you must create a database and manually run the tests in the t2 directory.  	
 
 SUPPORT AND DOCUMENTATION
 
