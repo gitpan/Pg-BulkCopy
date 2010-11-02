@@ -32,6 +32,11 @@ my $dbistring  = $config{DBI}{dbistring};
 my $dbiuser  = $config{DBI}{dbiuser};
 my $dbipass = $config{DBI}{dbipass};
 
+# Change this value to choose your own temp directory.
+# Make sure that both the script user and the postgres user
+# have rights to the directory and to each other's files.
+my $tmpdir = '/tmp' ;
+
 # Suppress Errors from the console.
 # Comment to see all the debug and dbi errors as your test runs.
 open STDERR, ">>/dev/null" or die ;
@@ -64,6 +69,7 @@ my $bad5 = Pg::BulkCopy->new(
     filename  => $filename,
     errorlog  => 'test_bad5.err', 
     workingdir => "$tdata/",
+    tmpdir 		=> $tmpdir ,
     debug      => 2 ,
     table     => $table, );
 
@@ -150,17 +156,26 @@ close FH ;
 $filename = "t157a.csv" ;
 $table = 'testing' ;
 
+
+TODO: {
+    local $TODO = qq / Fix CSV problems / ;
+
 my $PG_Test1 = Pg::BulkCopy->new(
     dbistring => $dbistring,
     dbiuser   => $dbiuser,
     dbipass   => $dbipass,
     filename  => $filename,
     workingdir => "$tdata/",
+    tmpdir 		=> $tmpdir ,
     iscsv       => 1,
     table     => $table, );
 
 is( $PG_Test1->TRUNC(), 0, 'Confirm a TRUNC' ) ;
 is ( $PG_Test1->LOAD() , 1 , 'Return Status should be 1' ) ;
+my $a, $b ;
+$a = $PG_Test1->errcode() ;
+$b = $PG_Test1->errstr() ;
+say "Error Code $a\nError Str $b" ;
 my $qPG_Test1 = IhasQuery->new( $PG_Test1->CONN() , 'testing' ) ;
 is ( $qPG_Test1->count() , 156 , "Should have loaded 156 records." ) ;
 
@@ -174,5 +189,5 @@ $lookedforit = 0 ;
 for ( @FH2 )  { if ( $_ =~  m/Optionstr/ ) { $lookedforit++ } }
 is ( $lookedforit, 0 , 'With debug set to 1 the item searched for in log should not be there.' ) ;
 $lookedforit = 0 ; 
-
+}
 

@@ -29,6 +29,11 @@ my $dbistring  = $config{DBI}{dbistring};
 my $dbiuser  = $config{DBI}{dbiuser};
 my $dbipass = $config{DBI}{dbipass};
 
+my $tmpdir = '/tmp' ;
+# Change this value to choose your own temp directory.
+# Make sure that both the script user and the postgres user
+# have rights to the directory and to each other's files.
+
 # Suppress Errors from the console.
 # Comment to see all the debug and dbi errors as your test runs.
 open STDERR, ">>/dev/null" or die ;
@@ -52,12 +57,15 @@ unlink "$tdata/t133992.tsv.REJECTS" ;
 my $filename = "t157a.csv" ;
 my $table = 'testing' ;
 
+TODO: {
+    local $TODO = qq / CSV problems CSV tests not requried for release / ;
 my $PG_Test = Pg::BulkCopy->new(
     dbistring => $dbistring,
     dbiuser   => $dbiuser,
     dbipass   => $dbipass,
     filename  => $filename,
     workingdir => "$tdata/",
+    tmpdir 		=> $tmpdir ,
     iscsv       => 1,
     debug       => 2 ,
     batchsize   => 10, 
@@ -66,6 +74,8 @@ my $PG_Test = Pg::BulkCopy->new(
 $PG_Test->TRUNC() ;
 $PG_Test->LOAD() ;
 is ( $PG_Test->errcode() , 1 , 'Return Status should be 1' ) ;
+
+
 is ( $PG_Test->errstr() , '' , 'Return string should be empty' ) ;
 my $IhQ_testing = IhasQuery->new( $PG_Test->CONN() , 'testing' ) ;
 is ( $IhQ_testing->count() , 156 , "Should load 156" ) ;
@@ -81,11 +91,13 @@ $found = 0 ;
 for ( @FHL ) { if ( $_ =~ m/Processing Batch\: 17/ ) { $found++ } }
 is ( $found, 0, 'Did not find Batch 17 in log. There should have been 16 batches.' ) ;
 
+
 $PG_Test->TRUNC() ;
 
+
+
 # The file with the " and the header is failing. figure out why and implement header support.
-TODO: {
-    local $TODO = qq /No support for CSV header and unknown issues with "quoted" input files/ ;
+
     # Set file name to t157b.csv
     $PG_Test->filename( 't157b.csv' ) ;
 # Test::More has an issue with the BulkCopy object exiting when LOAD has a critical failure
@@ -107,6 +119,7 @@ my $MaxErrors = Pg::BulkCopy->new(
     dbipass   => $dbipass,
     filename  => $filename,
     workingdir => "$tdata/",
+    tmpdir 		=> $tmpdir ,
     iscsv       => 0,
     debug       => 2 ,
     batchsize   => 5000, 

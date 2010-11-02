@@ -1,4 +1,7 @@
 #!perl 
+
+use strict ;
+use warnings ;
 use feature ':5.10';
 use Cwd ;
 use Config::Std;
@@ -7,9 +10,6 @@ use File::Copy ;
 
 use Test::More tests => 26;
 #use Test::More 'no_plan' ;
-
-# require 't2/PGBCP-Common-Test.pm' ;
-# import Common ;
 
 diag( "Testing Pg::BulkCopy $Pg::BulkCopy::VERSION, Perl $], $^X" );
 BEGIN {
@@ -31,6 +31,11 @@ read_config "$pwd/t2/test.conf" => my %config;
 my $dbistring  = $config{DBI}{dbistring};
 my $dbiuser  = $config{DBI}{dbiuser};
 my $dbipass = $config{DBI}{dbipass};
+
+# Change this value to choose your own temp directory.
+# Make sure that both the script user and the postgres user
+# have rights to the directory and to each other's files.
+my $tmpdir = '/tmp' ;
 my $table = 'testing' ;
 
 # Suppress Errors from the console.
@@ -64,6 +69,7 @@ my $PG_Test1 = Pg::BulkCopy->new(
     dbipass   => $dbipass,
     filename  => $filename,
     workingdir => "$tdata/",
+    tmpdir 		=> $tmpdir ,
     icsv      => 0 ,
     table     => $table, );
 
@@ -102,6 +108,7 @@ my $PG_Test2 = Pg::BulkCopy->new(
     dbipass   => $dbipass,
     filename  => $filename,
     workingdir => "$tdata",
+    tmpdir 		=> $tmpdir ,
     iscsv     => 1, 
     table     => $table, );
 

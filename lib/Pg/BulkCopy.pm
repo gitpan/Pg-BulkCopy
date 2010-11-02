@@ -1,5 +1,5 @@
 
-=head1 Pg::BulkCopy.pm and pg_bulkcopy.pl Version 0.15
+=head1 Pg::BulkCopy.pm and pg_bulkcopy.pl Version 0.16
 
 =cut
 
@@ -14,7 +14,7 @@ use File::Copy ;
 use FileHandle; 
 
 package Pg::BulkCopy;
-our $VERSION = '0.15' ;
+our $VERSION = '0.16' ;
 use Moose ;
 	has 'dbistring' => ( isa => 'Str', is => 'rw', required => 1, ) ;
 	has 'filename' => ( isa => 'Str', is => 'rw', required => 1, ) ;	
@@ -42,6 +42,9 @@ use Moose ;
 	has 'batchsize' => ( isa => 'Int', is => 'rw', default => 10000, ) ;
 	has 'errorlog' => ( isa => 'Str', is => 'rw', default => 0, ) ;	
 	# this makes the default to make empty strings null. set the value to none to have no nulls.
+# *****************
+#TODO look further into handling of nulls	
+# *****************
 	has 'null' => ( isa => 'Str', is => 'rw', default => "\'\'", ) ;
 	has 'iscsv' => ( isa => 'Int', is => 'rw', default => 0, ) ; 
 # This has to be stripped for batching and the headers fed to the column method, which also must be written.	
@@ -61,7 +64,7 @@ sub BUILD {
 #  Set a default if no error log is provided.
 #  Append to the working directory if only a file name is provided.
 #  Leave it alone if a path is provided.
-# Once the location is known, it is opened as an append to file handle and stored in self->FH. 	
+# Once the location is known, it is opened as an append to file handle and stored in self->EFH. 	
  	if ( $self->{'errorlog'} eq '0' ) { $self->{'errorlog'} = $self->{'workingdir'} . 'pg_BulkCopy.ERR' } 
  	elsif ( $self->{'errorlog'} !~ m|\/| ) { $self->{'errorlog'} = $self->{'workingdir'} . $self->{'errorlog'} } ;	
  	unless ( $self->{'debug'} == 0 ) { 
@@ -73,12 +76,12 @@ sub BUILD {
 		$self->{'EFH'}->autoflush(1) ;
 		}
  	my $t = localtime ;
- 	$self->_dbg( 1, "Debug Logging to $self->{'errorlog'} $t" ) ;
+ 	$self->_DBG( 1, "Debug Logging to $self->{'errorlog'} $t" ) ;
     my @selfkeys = qw / dbistring dbiuser dbipass table filename workingdir tmpdir 
         errorlog batchsize null iscsv debug / ;
     my $detailed = "Pg::BulkCopy invoked with Parameters:\n" ;
     foreach my $s ( @selfkeys ) { $detailed = "$detailed $s $self->{$s}\n" }
-    $self->_dbg( 2, $detailed ) ;	
+    $self->_DBG( 2, $detailed ) ;	
 	}
 	
 # debug levels 
@@ -87,7 +90,7 @@ sub BUILD {
 #	2 All possible debug messages.
 #	3+ Higher numbers are used for debuginng messages in development.
 
-sub _dbg {
+sub _DBG {
 	my $self =shift ;
 	my $level = shift  ;
 	if (  $self->{'debug'} == 0 ) { return } 
@@ -98,7 +101,7 @@ sub _dbg {
 	}
 	
 # Used by a calling program to cause the logging of an event.	
-sub log { my $self =shift ; $self->_dbg( 1, @_ ); } ;	
+sub LOG { my $self =shift ; $self->_DBG( 1, @_ ); } ;	
 
 sub CONN { 
 	my $self =shift ;
@@ -115,7 +118,7 @@ sub TRUNC {
 	my $self =shift ;
 	my $truncstr = 'TRUNCATE ' . $self->{'table'} . ' ;' ;
 	my $conn = $self->CONN() ;
-	$self->_dbg( 2, $truncstr ) ;
+	$self->_DBG( 2, $truncstr ) ;
 	my $DBH = $conn->prepare( $truncstr ) ;
 	$DBH->execute ;
 	if ( $DBH->err ) { return $DBH->errstr } 
@@ -133,7 +136,7 @@ sub _OPTIONSTR {
 	unless ( $self->{'null'} eq 'none' ) { $optstr = $optstr . "NULL $self->{ 'null' } " ; } ;
 	if ( length( $optstr ) > 1 ) { $optstr = 'WITH ' . $optstr . ';' ; }
 	else  { $optstr = ';' } ; # Even with no opts will need to tack on trailing semicolon.
-	$self->_dbg( 2, 'Optionstr: ', $optstr ) ;
+	$self->_DBG( 2, 'Optionstr: ', $optstr ) ;
 	return $optstr ;	
 	}
 
@@ -146,7 +149,7 @@ sub DUMP {
 	my $conn = $self->CONN() ; #DBI->connect( $dbistr, $dbiuser, $dbipass ) or die "Error $DBI::err [$DBI::errstr]" ;
 	my $opts = $self->_OPTIONSTR()  ;
 	my $dumpstr = "COPY $self->{'table'} TO \'$jobfile\' $opts"  ; 
-	$self->_dbg( 2, "Dump SQL", $dumpstr  );
+	$self->_DBG( 2, "Dump SQL", $dumpstr  );
 	my $DBH = $conn->prepare( $dumpstr ) ;
 	$DBH->execute ;
 	if ( $DBH->err ) { 
@@ -159,13 +162,12 @@ sub DUMP {
 		}
 	$self->{ 'errcode' } = $returnstatus ;
 	$self->{ 'errstr' } = $returnstring ;	
-	$self->_dbg( 1,
+	$self->_DBG( 1,
 		"Executed DUMP: $dumpstr",
 		"Return Status: $returnstatus [ 1 indicates no errors returned ]",
 		$returnstring ) ;
 	return ( $returnstatus ) ; 	
 	} #DUMP
-
 	
 sub LOAD { 
 	my $self =shift ;
@@ -179,7 +181,7 @@ sub LOAD {
 	my $opts = $self->_OPTIONSTR()  ;
 	my $loadstr = "COPY $self->{'table'} FROM \'$jobfile\' $opts"  ; 
  	my $t = localtime ;
-	$self->_dbg( 2, 
+	$self->_DBG( 2, 
 		"LOAD at $t",
 		"LOAD Command $loadstr" ) ;	
 	my $DoLOAD = sub { 
@@ -191,18 +193,18 @@ sub LOAD {
 			# These chars might end up next to line or the numer we seek.
 			# translate turns them to spaces so they don't interfere.
 			$DBHE =~ tr/\:\,/  /d ;
-			$self->_dbg( 2, "DBI Error Encountered. Attempting to identify and reject bad record.\n", $DBHE ) ;
+			$self->_DBG( 2, "DBI Error Encountered. Attempting to identify and reject bad record.\n", $DBHE ) ;
 			my @ears = split /\s/, $DBHE  ;
 			while ( @ears ) {
 				my $ear = shift @ears;
 					if ( $ear =~ m/line/i ) {
 						$ear = shift @ears  ;
 						if ( $ear =~ /^-?\d+$/ ) { 
-							$self->_dbg( 2, "Identified Error Line",  $ear ) ;
+							$self->_DBG( 2, "Identified Error Line",  $ear ) ;
 							return $ear ; } 
 						} # if ( $ear =~ m/line/i )
 				} # while ( @ears ) 
-				$self->_dbg( 1, "Cannot parse line number from \n||$DBHE||n") ;
+				$self->_DBG( 1, "Cannot parse line number from \n||$DBHE||n") ;
 				exit ;
 			} # if ( $DBH->err )
 		return 0 ;
@@ -216,7 +218,7 @@ sub LOAD {
 		open OLD, "<$jobfile.OLD" ;
 		open JOB, ">$jobfile" ;
 		my $lncnt = 0 ;
-		$self->_dbg( 2, "ReWrite is rewriting a job file." ) ;
+		$self->_DBG( 2, "ReWrite is rewriting a job file." ) ;
 		while (<OLD>) {
 			$lncnt++ ;
 			if ( $lncnt == $badline ) { print $REJECT $_ } 
@@ -224,8 +226,9 @@ sub LOAD {
 			} ;
 		close JOB ; 
 		close OLD ;
-		#$self->_dbg( 2, "New Job File: $jobfile\n", "Old: $jobfile.OLD\n" ) ;
-if ( $self->{'debug'} > 1) { `cat $jobfile > $jobfile.1` ; my $old = "$jobfile.OLD" ; `cat $old > $jobfile.2` }
+		$self->_DBG( 2, "New Job File: $jobfile\n", "Old: $jobfile.OLD\n" ) ;
+		# If debugging this keeps copies of the most recent jobfiles.		
+			if ( $self->{'debug'} > 1) { `cat $jobfile > $jobfile.1` ; my $old = "$jobfile.OLD" ; `cat $old > $jobfile.2` }
 		unlink "$jobfile.OLD" ;
 		} ;
 	open my $FH, "<$fname" or die "Unable to read $fname\n"  ;
@@ -234,20 +237,21 @@ if ( $self->{'debug'} > 1) { `cat $jobfile > $jobfile.1` ; my $old = "$jobfile.O
 	my $batchcount = 0 ;
 	my $finished = 0 ;
 	my $iterator = 1 ;
-$self->_dbg( 2, "BatchCount $batchcount, Iterator $iterator") ;		
+$self->_DBG( 3, "BatchCount $batchcount, Iterator $iterator") ;		
 	until ( $finished == 1 ) {
 		# This is normally desired spew, leave debug at 1, call with debug 0 to suppress.
-		$self->_dbg( 2, "Processing Batch: $iterator" ) ;
+		$self->_DBG( 1, "Processing Batch: $iterator" ) ;
 		$batchcount = 0 ;
 		open my $JOB, ">$jobfile" or die "Check Permissions on $self->{ 'tmpdir' } $!\n" ;
 		while ( $batchcount < $batchsize ) {
-$self->_dbg( 3, "BatchCount $batchcount, Iterator $iterator") ;			
+$self->_DBG( 3, "BatchCount $batchcount, Iterator $iterator") ;			
 			my $line = <$FH> ;
 			print $JOB $line ; 
 			if ( eof($FH) ) { 
 				$batchcount = $batchsize ; 
 				$finished = 1 ; 
-				$self->_dbg( 2,  "Finished making batches" ) ; } ;				
+				$self->_DBG( 2,  "Finished making batches" ) ; 
+				} ;			
 			$batchcount++ ; $jobcount++ ;
 			}
 		close $JOB ;
@@ -262,7 +266,7 @@ $self->_dbg( 3, "BatchCount $batchcount, Iterator $iterator") ;
 					$batchcomplete = 1 ;
 					$returnstring = 
 					"Max Errors $ErrorCount reached at $jobcount lines. See $self->{'errorlog'} and $rejectfile."  ;
-$self->_dbg( 2, "Return string Set", $returnstring ) ;
+$self->_DBG( 2, "Return string Set", $returnstring ) ;
 					$returnstatus  = -1 ; 
 					$finished = 1 ;
 					$self->TRUNC() ;
@@ -274,18 +278,12 @@ $self->_dbg( 2, "Return string Set", $returnstring ) ;
 	} #until finished
 	unlink $jobfile ;
 	$self->{ 'errcode' } = $returnstatus ;
-$self->_dbg( 2, "Return Value: $returnstatus" ) ;
+$self->_DBG( 2, "Return Value: $returnstatus" ) ;
 	$self->{ 'errstr' } = $returnstring ;	
 	return ( $returnstatus ) ;
 }	 #LOAD
 
-
-
-=head1 Warning this is a Pre-view version
-
-The current pg_BulkCopy.pl is a placeholder. Since I started writing this, I seem to not have time to finish it, and decided it was functional enough that other people might find it useful even in its present state. 
-
-=head1 pg_BulkCopy.pl
+=head1 pg bulkCopy.pl
 
 The utility script pg_BulkCopy.pl was written to provide postgreSQL with a convient bulk loading utility. The script is implemented as a wrapper and a module (pg_BulkCopy.pl) so that other programmers may easily incorporate the two useful methods LOAD and DUMP directly into other perl scripts. 
 
@@ -295,13 +293,93 @@ The DUMP Method invokes postgres' COPY TO command, and does nothing useful in ad
 
 The LOAD Method is much more interesting, it breaks the load file into chunks of 10000 (configurable) records in the temp directory and tries to COPY FROM, if it fails, it parses the error message for the line number, then it removes the failed line to a rejects file and tries again. As with DUMP you can select the options supported by the postgres COPY command, you can also set a limit on bad records (default is 10).
 
-=head2 Module Pg::BulkCopy 
+Command Line Arguments to script: 
 
-All methods used by pg_BulkCopy.pl are provided by Pg::BulkCopy
+	file|filename|f 
+	table|t 
+	load|l  
+	dump|d  
+	iscsv|csv
+	dbistring|dbistr|ds
+	dbiuser|dbiusr|du 
+	dbipass|dp 
+	workingdir|working|w 
+	tmpdir|tmp 
+	batchsize|batch|b 
+	errorlog|error|e 
+	maxerrors|errors|max 
+	debug|dbg 
+	trunc|truncate|tr 
+	help|h|? 
+	read|r [to read additional variables out of a file]
+	
+Format of a Parameter file (specified with --read):
+
+	[options]
+	filename : blob1.tsv
+	load : 1
+	dump :
+	iscsv :
+	dbistring : DBI:Pg:dbname=pg_bulkcopy_test;host=127.0.0.1
+	dbiuser : postgres
+	dbipass : postgres
+	table : testing
+	workingdir : /psql_scr/testing/tdata/
+	tmpdir : /psql_scr/testing/tmp/
+	batchsize :
+	errorlog : 
+	maxerrors : 50
+	debug : 2
+	trunc : 1
+
+Example command line
+
+	pg_bulkcopy.pl --filename more1.tsv --iscsv 0 --dbistring "DBI:Pg:dbname=pg_bulkcopy_test;host=127.0.0.1" --dbiuser postgres --dbipass postgres --table testing --workingdir /tempdata --tmpdir /mytempfiles --debug 1
+
+Command Line to load all values from bulkcopy.conf
+
+	pg_bulkcopy.pl --read "bulkcopy.conf"
+
+Command Line to load values from bulkcopy.conf but provide or override some values from the command line. Values given on the command line take precedence over conflicting values read from file.
+
+	pg_bulkcopy.pl --read "bulkcopy.conf" --dbistring "DBI:Pg:dbname=pg_bulkcopy_test;host=127.0.0.1" --dbiuser postgres --dbipass postgres 
+	
+=head2 Description of Command Line Parameters
+
+=head3 dbistr, dbiuser, dbipass
+
+These are the parameters needed to establish a dbi connection. Please refer to the documentation establishing a database connection with dbi.
+
+=head3 filename, table
+
+B<filename> is a tab or comma seperated values text file containing the data to be imported or exported. B<table> indicates the table in the connected database to be used for the operation.
+
+=head3 iscsv, load and dump, trunc
+
+Boolean values of 0 or 1. An B<iscsv> value of 1 indicates the file is csv. The default B<iscsv> value of 0 indicates tab seperated. The default operation is B<load> (load = 1), setting B<dump> to 1 will set load to 0 and cause the program to dump instead. trunc causes an explicit truncation (deletion) of all data in the table prior to the requested operation (not useful with dump).
+
+=head3 workingdir, tempdir, errorlog
+
+B<workingdir> is where the file, reject and log files will be written, unless the full path/filename is specified it is also expected to find/write the file for the operation here. B<errorlog> is the name of a file to write information about problems to, this will default to <filename>.log. 
+
+B<tempdir> where the temporary working files will be written to. tempdir defaults to /tmp. Do not overlook tempdir the user executing the script and the uid that postgres is running under must have rw permissions here and the default creation mask must permit access to each other's newly created files! 
+
+=head3 batchsize, maxerrors, debug
+
+B<batchsize> controls the size of the chunks used for loading, the default is 10,000. With clean data a larger batch size will spead processing, with dirty data smaller batches will improve performance. Every time an error is encountered the offending record needs to be eliminated from the batch, which is currently done inneficiently by re-writing the file. 
+
+B<maxerrors> tells the program to abort if too many errors are found. The default is 10.
+
+B<debug> can disable or increase the amount of error logging done. 0 disables error logging, normal is 1. 
+
+
+=head1 Module Pg::BulkCopy 
+
+All methods used by pg_BulkCopy.pl are provided by Pg::BulkCopy. The method names follow the convention of explicitely defined methods in caps and methods provided by Moose in lowercase.
 
 =head2 Systems Supported
 
-This utility is specific to postgreSQL. It is a console application for the server itself. While in theory it could with some cleverness run remotely, such actions will be "unsupported". The utility is targeted towards recent versions of postgres running on unix-like operating systems, if you need to run it on Windows good luck and send a testing report if it works!
+This utility is specific to postgreSQL. It is a console application for the server itself. The postgres process must be able to access the data files through the local file system on the server. The utility is targeted towards recent versions of postgres running on unix-like operating systems, if you need to run it on Windows good luck and let me know if you succeed!
 
 =head1 Using Pg::BulkCopy
 
@@ -321,6 +399,8 @@ The above example shows the creation of a new BulkCopy object. It requires the d
 
 The methods DUMP, TRUNC, and LOAD do most of the work. You can use errcode and errstr to findout about the results. 
 
+The tests in the distributions t2 folder can be referred to for additional examples.
+
 
 =head1 Methods for Pg::BulkCopy
 
@@ -330,7 +410,7 @@ Returns the dbi connection, initializing it if necessary.
 
 =head2 TRUNC
 
-If the Trunc option is specified, delete all records from table with the postgres TRUNCATE command, instead of carrying out a LAOD or DUMP operation. 
+If the Trunc option is specified, delete all records from table with the postgres TRUNCATE command, instead of carrying out a LOAD or DUMP operation. 
 
 =cut
 
@@ -344,7 +424,7 @@ The main subroutine for importing bulk data into postgres.
 
 The main subroutine for exporting bulk data into postgres.
 
-=head2 log
+=head2 LOG
 
 Write to the log file being used by Pg::BulkCopy. Takes a scalar value or an array, items in an array are written on seperate lines. Remember that if debug is 0 nothing will ever be logged.
 
@@ -369,17 +449,29 @@ Toggle between Command Tab seperated input. The default is tab seperated, 0.
 
 The workingdir is where Pg::BulkCopy will look for the data file and where it will write any reject or log files. The tempdir is a scratch directory which both the script user and the postgres user have read write access. The default of both workingdir and tempdir is /tmp. Finally a file name for input or output is needed. 
 
+=head2 Private subroutines
+
+=head3 BUILD 
+
+Is a moose component, it is run "after new".
+
+=head3 _DBG 
+
+is used internally for outputting to stderr and the log file.
+
+=cut
+
 =head1 Troubleshooting and Issues:
 
 =head2 Permissions 
 
-The most persistent problem in getting Pg::BulkCopy to work correctly is permissions. First one must deal with hba.conf. Then once you are able to connect as the script user to psql and through a dbi connection you must deal with the additional issue that you are probably not running the script as the account postgres runs under. The account executing the script must be able to read and execute the script directories, read and write the working directory and the temp directory. Finally the account running the Postgres server must be able to read and write in the temp directory. It is for this reason that the script copies all work in process to the temp directory, which is defaulted to /tmp because this is a natural place for it and because the default permissions might be (but probably aren't) compatible. 
+The most persistent problem in getting Pg::BulkCopy to work correctly is permissions. First one must deal with hba.conf. Then once you are able to connect as the script user to psql and through a dbi connection you must deal with the additional issue that you are probably not running the script as the account postgres runs under. The account executing the script must be able to read and execute the script directories, read and write the working directory and the temp directory. Finally the account running the Postgres server must be able to read and write in the temp directory (which is defaulted to /tmp). 
 
-Whenever I try to test this module on a different system I always have difficulties due to permissions problems. Given the objective of being able to install this module and have the script just work the next development priority is working on this. I am considering a TESTPERM method   
+To deal proactively with permissions issues I recommend the following steps. Check umask in /etc/profile, and change it to something like 002 (which gives owner and group read/write other read). Create a group containing the users of the script and the postgres user. On the directory where you are running the scripts, the temp directory and the one containing data use chmod to set the Special bit (chmod g+s). Make sure that the directory and any pre-existing files have the correct group set. Touch a file as a user in the group and confirm that the group is set to the group and not the user. Other options are to use the ACL feature to manage permissions or to try running the script as the postgres user. 
 
 =head2 Other Issues
 
-There is currently an issue I haven't resolved with a quoted csv input test file. The next features I expect to work on involve supporting csv headers and field reording, which will also make the feature available for tsv files.
+There is currently an issue I haven't resolved with a quoted csv input test file. The next features I expect to work on involve supporting csv headers and field reordering, which will also make the feature available for tsv files.
 
 =head1 Options
 
@@ -389,7 +481,7 @@ CSV Headers are not supported yet, you'll need to chop them off yourself. Field 
 
 =head1 Testing
 
-To properly test the module and script it is necessary to have an available configured database. So that the bundle can be installed silently through a cpan utility session very few tests are run during installation. Proper testing must be done manually. 
+To properly test the module and script it is necessary to have an available configured database. So that the bundle can be installed silently through a cpan utility session very few tests are run during installation. Proper testing must be done manually. Due to the size of the test data it has been removed to a seperate archive, Pg-BulkCopyTest which must be downloaded seperately from cpan. Normally the contents would be restored to the tdata directory.
 
 =head2 Create and connect to the database
 
@@ -402,17 +494,7 @@ Edit the file t2/test.conf. You will need to provide the necessary dsn values fo
 
 If necessary modify harness.sh from the distribution directory as appropriate and execute it to run the tests.
 
-=head2 Private subroutines
 
-=head3 BUILD 
-
-Is a moose component, it is run "after new".
-
-=head3 _dbg 
-
-is used internally for outputting to stderr and the log file.
-
-=cut
 
 =head1 AUTHOR
 

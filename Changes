@@ -1,5 +1,7 @@
 Revision history for Pg-BulkCopy
 
+0.16	September 26, 2010
+		Some Documentation updates.
 0.15	August 18, 2010
 		First stable version. Wrapper script still not implemented.
 0.14	August 3, 2010 
