@@ -1,14 +1,14 @@
 ---
-abstract: ~
+abstract: 'Bulk Data Load/ Dump for Postgres.'
 author:
   - 'John Karr, C<< <brainbuz at brainbuz.org> >>'
   - 'John Karr <brainbuz@brainbuz.org>'
 build_requires:
+  Config::General: 0
   Config::Merge: 0
-  Config::Std: 0
   Cwd: 0
   DBD::Pg: 0
-  ExtUtils::MakeMaker: 6.42
+  ExtUtils::MakeMaker: 6.59
   File::Copy: 0
   FileHandle: 0
   Getopt::Long: 0
@@ -18,9 +18,10 @@ build_requires:
   Test::Exception: 0
   Test::More: 0
 configure_requires:
-  ExtUtils::MakeMaker: 6.42
+  ExtUtils::MakeMaker: 6.59
 distribution_type: module
-generated_by: 'Module::Install version 1.00'
+dynamic_config: 1
+generated_by: 'Module::Install version 1.06'
 license: gpl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -31,7 +32,7 @@ no_index:
     - inc
     - t
 requires:
-  perl: 5.10.0
+  perl: 5.12.0
 resources:
   license: http://opensource.org/licenses/gpl-license.php
-version: 0.16
+version: 0.20_01

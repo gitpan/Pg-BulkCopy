@@ -1,31 +1,31 @@
-#!perl 
-use feature ':5.10';
+#!/usr/bin/env perl 
+
+use 5.012;
 use Cwd ;
-use Config::Std;
-use IhasQuery ;
+use Config::General;
+#use IhasQuery ;
+use DBIx::Simple ;
 use File::Copy ;
 use strict ;
+use Pg::BulkCopy ;
 # 
-use Test::More tests => 27;
-#use Test::More 'no_plan' ;
-
+#use Test::More tests => 27;
+use Test::More 'no_plan' ;
 
 ########################################################################
 # COMMON CODE. CUT AND PASTE TO ALL TESTS.
 #######
 
-
-diag( "Testing Pg::BulkCopy $Pg::BulkCopy::VERSION, Perl $], $^X" );
-BEGIN {
-    use_ok( 'Pg::BulkCopy' ) || print "Bail out!";
-    }
-
 # get pwd, should be distribution directory where harness.sh was invoked from.
 my $pwd = getcwd;
+
+
 my $tdata = "$pwd/tdata" ;
 
 # Load named config file into specified hash...
-read_config "$pwd/t2/test.conf" => my %config;
+#read_config  => my %config;
+my $conf = new Config::General( "$pwd/t2/test.conf" );
+my %config = $conf->getall;
 
 # Extract the value of a key/value pair from a specified section...
 my $dbistring  = $config{DBI}{dbistring};
@@ -35,11 +35,15 @@ my $dbipass = $config{DBI}{dbipass};
 # Change this value to choose your own temp directory.
 # Make sure that both the script user and the postgres user
 # have rights to the directory and to each other's files.
-my $tmpdir = '/tmp' ;
+my $tmpdir = $config{OTHER}{'tmpdir'} || '/tmp' ;
+my $table = 'testing' ;
 
 # Suppress Errors from the console.
 # Comment to see all the debug and dbi errors as your test runs.
 open STDERR, ">>/dev/null" or die ;
+
+# reusable variables.
+my $testing = undef ; my $Q = undef ; my $A = undef ; my @AA = () ; my %B = () ;
 
 ########################################################################
 # END OF THE COMMON CODE
@@ -62,6 +66,19 @@ unlink "$tdata/test_bad5.err" ;
 my $table = 'millions' ;
 my $filename = "errors_25.tsv" ;
 
+my $mext = qq |
+my \$bad5 = Pg::BulkCopy->new(
+    dbistring => $dbistring,
+    dbiuser   => $dbiuser,
+    dbipass   => $dbipass,
+    filename  => $filename,
+    errorlog  => 'test_bad5.err', 
+    workingdir => "$tdata/",
+    tmpdir 		=> $tmpdir ,
+    debug      => 2 ,
+    table     => $table, ); | ;
+    say $mext ;
+
 my $bad5 = Pg::BulkCopy->new(
     dbistring => $dbistring,
     dbiuser   => $dbiuser,
@@ -71,16 +88,19 @@ my $bad5 = Pg::BulkCopy->new(
     workingdir => "$tdata/",
     tmpdir 		=> $tmpdir ,
     debug      => 2 ,
-    table     => $table, );
+    table     => $table, ); 
 
-my $millions = IhasQuery->new( $bad5->CONN(), 'millions' ) ;
-ok( $millions, "Have a working IHQ object from PGBCP object." ) ;
+#my $millions = IhasQuery->new( $bad5->CONN(), 'millions' ) ;
+$testing = DBIx::Simple->new(  $bad5->CONN() ) ;
+$Q = 'select count(*) from millions' ; 
+$A = undef ;
 
 $bad5->TRUNC() ;
 $bad5->LOAD() ;
 is ( $bad5->errcode() , 1 , 'Return Status should be 1' ) ;
 is ( $bad5->errstr() , '' , 'Return string should be empty' ) ;
-is ( $millions->count() , 22, "Counted 22 records loaded." ) ;
+$testing->query( $Q )->into( $A ) ;
+is ( $A , 22, "Counted 22 records loaded." ) ;
 
 open FH, "<$tdata/$filename.REJECTS" or die $!;
 like (  <FH> , 
@@ -124,7 +144,8 @@ $bad5->filename($filename) ;
 $bad5->LOAD() ;
 is ( $bad5->errcode(), 1 , 'Return Status should be 1' ) ;
 is ( $bad5->errstr() , '' , 'Return string should be empty' ) ;
-is ( $millions->count() , 42, "Counted 42 records loaded." ) ;
+$A = undef ; $testing->query( $Q )->into( $A ) ;
+is ( $A , 42, "Counted 42 records loaded." ) ;
 
 
 open FH, "<$tdata/$filename.REJECTS" or die $!;
@@ -176,8 +197,11 @@ my $a, $b ;
 $a = $PG_Test1->errcode() ;
 $b = $PG_Test1->errstr() ;
 say "Error Code $a\nError Str $b" ;
-my $qPG_Test1 = IhasQuery->new( $PG_Test1->CONN() , 'testing' ) ;
-is ( $qPG_Test1->count() , 156 , "Should have loaded 156 records." ) ;
+
+$A = undef ; $testing->query( $Q )->into( $A ) ;
+is ( $A , 42, "Counted 42 records loaded." ) ;
+#my $qPG_Test1 = IhasQuery->new( $PG_Test1->CONN() , 'testing' ) ;
+is ( $A , 156 , "Should have loaded 156 records." ) ;
 
 # This is a further test of the dbg function. 
 # Here the default debug = 1 is tested (it is set by default not explicitly). 

@@ -1,8 +1,10 @@
 #!perl 
-use feature ':5.10';
+use 5.012;
 use Cwd ;
 use Config::Std;
+use Config::General;
 use IhasQuery ;
+use DBIx::Simple ;
 use File::Copy ;
 
 use Test::More tests => 17;
@@ -12,31 +14,45 @@ diag( "Testing Pg::BulkCopy $Pg::BulkCopy::VERSION, Perl $], $^X" );
 BEGIN {
     use_ok( 'Pg::BulkCopy' ) || print "Bail out!";
     }
-
+  
 ########################################################################
 # COMMON CODE. CUT AND PASTE TO ALL TESTS.
 #######
 
 # get pwd, should be distribution directory where harness.sh was invoked from.
 my $pwd = getcwd;
+
 my $tdata = "$pwd/tdata" ;
 
 # Load named config file into specified hash...
-read_config "$pwd/t2/test.conf" => my %config;
+#read_config  => my %config;
+my $conf = new Config::General( "$pwd/t2/test.conf" );
+my %config = $conf->getall;
 
 # Extract the value of a key/value pair from a specified section...
 my $dbistring  = $config{DBI}{dbistring};
 my $dbiuser  = $config{DBI}{dbiuser};
 my $dbipass = $config{DBI}{dbipass};
 
-my $tmpdir = '/tmp' ;
 # Change this value to choose your own temp directory.
 # Make sure that both the script user and the postgres user
 # have rights to the directory and to each other's files.
-
+my $tmpdir = $config{OTHER}{'tmpdir'} || '/tmp' ;
+my $table = 'testing' ;
+ 
 # Suppress Errors from the console.
 # Comment to see all the debug and dbi errors as your test runs.
 open STDERR, ">>/dev/null" or die ;
+
+# reusable variables.
+my $testing = undef ; my $Q = undef ; my $A = undef ; my @AA = () ; my %B = () ;
+my $Simple = DBIx::Simple->new( $dbistring, $dbiuser, $dbipass ) ;
+
+my $QCount = sub {
+    my $table = shift ;
+    $Simple->query( "SELECT COUNT(*) FROM $table" )->into( my $A ) ;
+    return $A ;
+} ;
 
 ########################################################################
 # END OF THE COMMON CODE
@@ -75,10 +91,11 @@ $PG_Test->TRUNC() ;
 $PG_Test->LOAD() ;
 is ( $PG_Test->errcode() , 1 , 'Return Status should be 1' ) ;
 
-
 is ( $PG_Test->errstr() , '' , 'Return string should be empty' ) ;
-my $IhQ_testing = IhasQuery->new( $PG_Test->CONN() , 'testing' ) ;
-is ( $IhQ_testing->count() , 156 , "Should load 156" ) ;
+
+#my $IhQ_testing = IhasQuery->new( $PG_Test->CONN() , 'testing' ) ;
+
+is ( $QCount->( 'testing' ) , 156 , "Should load 156" ) ;
 
 open FHL, "<$tdata/pg_BulkCopy.ERR" or die $!;
 my (@FHL) = (<FHL>) ;
@@ -105,7 +122,7 @@ $PG_Test->TRUNC() ;
 #SKIP: {    $PG_Test->LOAD() ; }
     is ( $PG_Test->errcode() , 1 , 'Return Status should be 1' ) ;
     is ( $PG_Test->errstr() , '' , 'Return string should be empty' ) ;
-    is ( $IhQ_testing->count() , 156 , "Should load 156" ) ;
+    is ( $QCount->( 'testing' ) , 156 , "Should load 156" ) ;
 }  
 
 
@@ -140,7 +157,6 @@ $MaxErrors->maxerrors( 5 ) ;
 $MaxErrors->LOAD() ;
 is ( $MaxErrors->errcode() , -1 , 'Return Status should be -1 because the load failed.' ) ;
 like ( $MaxErrors->errstr() , qr/Max Errors 5 reached/, 'Return string should tell us Max Errors was reached.' ) ;
-
 $MaxErrors->maxerrors( 0 ) ;
 is ( $MaxErrors->maxerrors(), 99999, "Setting maxerrors to 0 should set it to 99999" ) ;
 $MaxErrors->maxerrors( 1 ) ;

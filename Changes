@@ -1,5 +1,16 @@
 Revision history for Pg-BulkCopy
 
+0.20    8 October 2012
+	Switched Config File format to Config::General.
+	Switched tests to DBIx::Simple to eliminate dependency
+	on depracated dbi wrapper.
+0.17	February 2011
+	Changed to Log::Handler instead of my own sloppy log manipulations.
+	Debugging of Carp::Heavy errors. 
+	My research indicates that Carp::Heavy hits an ancient Perl Bug that can't be fixed
+	without breaking lots of other things, so instead of telling me something useful about
+	a problem it just dies. Unfortunately Carp::Heavy is inherited. Experimentiation 
+	indicates that undefined values are often at fault for triggering it. 
 0.16	September 26, 2010
 		Some Documentation updates.
 0.15	August 18, 2010

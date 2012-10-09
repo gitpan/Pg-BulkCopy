@@ -25,7 +25,7 @@ t/pod.t
 t2/01_simple.t
 t2/03_badrecords.t
 t2/05_moreopts.t
-t2/11_script.t
+#t2/11_script.t
 t2/test.conf
 t2/script1.params
 t2/script2.params

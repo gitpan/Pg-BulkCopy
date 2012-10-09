@@ -1,20 +1,27 @@
-
-=head1 Pg::BulkCopy.pm and pg_bulkcopy.pl Version 0.16
-
-=cut
-
-
 use warnings;
 use strict;
 use Moose;
-use feature ":5.10" ;
+use 5.012 ;
 use Time::Piece ;
 use DBI ;
 use File::Copy ;
-use FileHandle; 
+use Log::Handler ;
+#use FileHandle; 
+
+=pod
+
+=head1 NAME
+
+Pg::BulkCopy - Bulk Data Load/ Dump for Postgres.
+
+=head1 VERSION
+
+Version 0.20
+
+=cut
 
 package Pg::BulkCopy;
-our $VERSION = '0.16' ;
+our $VERSION = '0.20_01' ;
 use Moose ;
 	has 'dbistring' => ( isa => 'Str', is => 'rw', required => 1, ) ;
 	has 'filename' => ( isa => 'Str', is => 'rw', required => 1, ) ;	
@@ -72,8 +79,11 @@ sub BUILD {
 # The performance benefit of Lazy buffering should be trivial compared to the consequences having the log truncate
 # prematurely if the program exits unexpectedly. It created problems during testing where tests needed access to the logs
 # but the BulkCopy object had not been destroyed and had not flushed the buffer.
-		$self->{'EFH'} = FileHandle->new( ">>$self->{'errorlog'}" or die " can\'t open $self->{'errorlog'}\n" ) ;
-		$self->{'EFH'}->autoflush(1) ;
+		open ( $self->{'EFH'} , '>>', $self->{'errorlog'} ) or die " can\'t open $self->{'errorlog'}\n"  ;
+		select( $self->{'EFH'} );
+		$| = 1;
+	#	$self->{'EFH'} = FileHandle->new( ">>$self->{'errorlog'}" or die " can\'t open $self->{'errorlog'}\n" ) ;
+	#	eval { $self->{'EFH'}->autoflush(1) } ; say "Autoflush @_\ n\n" ;
 		}
  	my $t = localtime ;
  	$self->_DBG( 1, "Debug Logging to $self->{'errorlog'} $t" ) ;
@@ -192,7 +202,7 @@ sub LOAD {
 			my $DBHE = $DBH->errstr ;
 			# These chars might end up next to line or the numer we seek.
 			# translate turns them to spaces so they don't interfere.
-			$DBHE =~ tr/\:\,/  /d ;
+			$DBHE =~ tr/\:\,/  / ;
 			$self->_DBG( 2, "DBI Error Encountered. Attempting to identify and reject bad record.\n", $DBHE ) ;
 			my @ears = split /\s/, $DBHE  ;
 			while ( @ears ) {
@@ -269,7 +279,7 @@ $self->_DBG( 3, "BatchCount $batchcount, Iterator $iterator") ;
 $self->_DBG( 2, "Return string Set", $returnstring ) ;
 					$returnstatus  = -1 ; 
 					$finished = 1 ;
-					$self->TRUNC() ;
+#					$self->TRUNC() ;
 					}
 				else { $ReWrite->( $loaded ) ; }
 				} ; 
@@ -481,7 +491,7 @@ CSV Headers are not supported yet, you'll need to chop them off yourself. Field 
 
 =head1 Testing
 
-To properly test the module and script it is necessary to have an available configured database. So that the bundle can be installed silently through a cpan utility session very few tests are run during installation. Proper testing must be done manually. Due to the size of the test data it has been removed to a seperate archive, Pg-BulkCopyTest which must be downloaded seperately from cpan. Normally the contents would be restored to the tdata directory.
+To properly test the module and script it is necessary to have an available configured database. So that the bundle can be installed silently through a cpan utility session very few tests are run during installation. Proper testing must be done manually. Due to the size of the test data it has been removed to a seperate archive, Pg-BulkCopyTest which must be downloaded seperately from cpan. Normally the contents would be restored to the tdata directory.  
 
 =head2 Create and connect to the database
 

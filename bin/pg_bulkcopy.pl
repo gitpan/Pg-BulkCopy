@@ -11,10 +11,10 @@ use Pg::BulkCopy ;
 
 
 sub HelpMe {
-	my $Msg = qq\
+	my $Msg = qq (
    Type "perldoc Pg::BulkCopy" or possibly "man Pg::BulkCopy" to get more 
    information about how to use pg_bulkcopy.pl.
-\	;
+)	;
 	for (@_) { $Msg =  "$Msg\n *** $_ ***\n" } ; 
 	die $Msg ;
 	}
