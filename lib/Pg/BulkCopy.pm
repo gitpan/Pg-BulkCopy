@@ -21,7 +21,7 @@ Version 0.20
 =cut
 
 package Pg::BulkCopy;
-our $VERSION = '0.20_01' ;
+our $VERSION = '0.20_02' ;
 use Moose ;
 	has 'dbistring' => ( isa => 'Str', is => 'rw', required => 1, ) ;
 	has 'filename' => ( isa => 'Str', is => 'rw', required => 1, ) ;	
