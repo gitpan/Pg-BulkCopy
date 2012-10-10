@@ -12,13 +12,13 @@ use Pg::BulkCopy ;
 #use Test::More tests => 27;
 use Test::More 'no_plan' ;
 
+ 
 ########################################################################
 # COMMON CODE. CUT AND PASTE TO ALL TESTS.
 #######
 
 # get pwd, should be distribution directory where harness.sh was invoked from.
 my $pwd = getcwd;
-
 
 my $tdata = "$pwd/tdata" ;
 
@@ -37,13 +37,20 @@ my $dbipass = $config{DBI}{dbipass};
 # have rights to the directory and to each other's files.
 my $tmpdir = $config{OTHER}{'tmpdir'} || '/tmp' ;
 my $table = 'testing' ;
-
+ 
 # Suppress Errors from the console.
 # Comment to see all the debug and dbi errors as your test runs.
 open STDERR, ">>/dev/null" or die ;
 
 # reusable variables.
 my $testing = undef ; my $Q = undef ; my $A = undef ; my @AA = () ; my %B = () ;
+my $Simple = DBIx::Simple->new( $dbistring, $dbiuser, $dbipass ) ;
+
+my $QCount = sub {
+    my $table = shift ;
+    $Simple->query( "SELECT COUNT(*) FROM $table" )->into( my $A ) ;
+    return $A ;
+} ;
 
 ########################################################################
 # END OF THE COMMON CODE

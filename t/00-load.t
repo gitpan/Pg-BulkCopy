@@ -1,6 +1,7 @@
 #!perl 
 
 use Cwd ;
+use Carp::Always ;
 use Test::More tests => 9;
 #use Test::More 'no_plan' ;
 
@@ -44,5 +45,5 @@ my $PG_Test2 = Pg::BulkCopy->new(
 is ( $PG_Test2->workingdir() , "$workdir/", 'workingdir should not be temp and have appended a slash.' ) ;
 is ( $PG_Test2->iscsv() , 1, 'iscsv defaults to 0, for tab seperated. Was set to 1 for csv.' ) ;
 is ( $PG_Test2->errorlog() , "$workdir/pg_BulkCopy.ERR", 'Error log file in working directory.' ) ;   
-my @s = stat  "$workdir/pg_BulkCopy.ERR" ;
+@s = stat  "$workdir/pg_BulkCopy.ERR" ;
 ok ( @s , 'created the log file.') ;

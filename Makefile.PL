@@ -1,26 +1,34 @@
-use inc::Module::Install;
+use 5.012;
+use strict;
+use warnings;
+use ExtUtils::MakeMaker;
 
-name     'Pg-BulkCopy';
-all_from 'lib/Pg/BulkCopy.pm';
-author   q{John Karr <brainbuz@brainbuz.org>};
-license  'gpl';
-
-build_requires 'DBD::Pg';
-build_requires 'Moose';
-perl_version '5.12';
-build_requires 'Test::More';
-build_requires 'Test::Exception' ;
-build_requires 'File::Copy' ;
-build_requires 'FileHandle';
-build_requires 'Log::Handler' ;
-build_requires 'IO::CaptureOutput' ;
-build_requires 'Config::Std';
-#build_requires 'Config::Merge';
-build_requires 'Config::General' ;
-build_requires 'Cwd' ;
-build_requires 'Getopt::Long' ;
-
-auto_install;
-
-WriteAll;
+WriteMakefile(
+    NAME                => 'Pg::BulkCopy',
+    AUTHOR              => q{John Karr <brainbuz@brainbuz.org>},
+    VERSION_FROM        => 'lib/Pg/BulkCopy.pm',
+    ABSTRACT_FROM       => 'lib/Pg/BulkCopy.pm',
+    ($ExtUtils::MakeMaker::VERSION >= 6.3002
+      ? ('LICENSE'=> 'gpl')
+      : ()),
+    PL_FILES            => {},
+    PREREQ_PM => {
+        'Test::More' => 0.98,
+        'DBD::Pg' => '2.17.0',
+        'Moose' => 2.0,
+        'Test::Exception' => 0.31,
+        'File::Copy' => 0,
+        'FileHandle' => 0,
+        'IO::CaptureOutput' => 1.1102,
+        'DBIx::Simple' => 1.35,
+        'Config::Any' => 0.23,
+        'Config::General' => 2.50,
+        'Config::Std' => 0.900,
+        'Carp::Always' => 0.12,
+        'Cwd' => 3.33,
+        'Getopt::Long' => 2.38 ,        
+    },
+    dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
+    clean               => { FILES => 'Pg-BulkCopy-*' },
+);
 

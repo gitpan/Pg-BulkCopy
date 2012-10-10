@@ -1,19 +1,9 @@
 bin/pg_bulkcopy.pl
 Changes
-inc/Module/AutoInstall.pm
-inc/Module/Install.pm
-inc/Module/Install/AutoInstall.pm
-inc/Module/Install/Base.pm
-inc/Module/Install/Can.pm
-inc/Module/Install/Fetch.pm
-inc/Module/Install/Include.pm
-inc/Module/Install/Makefile.pm
-inc/Module/Install/Metadata.pm
-inc/Module/Install/Win32.pm
-inc/Module/Install/WriteAll.pm
 lib/Pg/BulkCopy.pm
 Makefile.PL
 MANIFEST
+license_gpl_3.0.txt
 META.yml
 README
 t/00-load.t
@@ -25,6 +15,7 @@ t/pod.t
 t2/01_simple.t
 t2/03_badrecords.t
 t2/05_moreopts.t
+t2/11_script.t
 t2/test.conf
 t2/script1.params
 t2/script2.params
@@ -32,3 +23,6 @@ sql/create_test.sql
 sql/dbitest.pl
 sql/poptestdb.pl
 harness.sh
+tdata/README
+
+META.json                                Module JSON meta-data (added by MakeMaker)

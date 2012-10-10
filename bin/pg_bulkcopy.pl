@@ -2,7 +2,7 @@
 
 use strict ;
 #use warnings ;
-use feature ":5.10" ;
+use 5.012;
 use Getopt::Long;
 use Cwd ;
 use Config::Std;
