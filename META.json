@@ -43,6 +43,7 @@
             "FileHandle" : "0",
             "Getopt::Long" : "2.38",
             "IO::CaptureOutput" : "1.1102",
+            "Log::Handler" : "0",
             "Moose" : "2",
             "Test::Exception" : "0.31",
             "Test::More" : "0.98"
@@ -50,5 +51,5 @@
       }
    },
    "release_status" : "testing",
-   "version" : "0.20_03"
+   "version" : "0.20_04"
 }

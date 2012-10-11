@@ -1,6 +1,8 @@
 use 5.012;
 use strict;
 use warnings;
+use lib 'inc'; 
+use Devel::AssertOS qw(Linux FreeBSD Solaris); 
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -21,6 +23,7 @@ WriteMakefile(
         'FileHandle' => 0,
         'IO::CaptureOutput' => 1.1102,
         'DBIx::Simple' => 1.35,
+        'Log::Handler' => 0,
         'Config::Any' => 0.23,
         'Config::General' => 2.50,
         'Config::Std' => 0.900,
