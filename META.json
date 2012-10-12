@@ -40,7 +40,6 @@
             "DBD::Pg" : "v2.17.0",
             "DBIx::Simple" : "1.35",
             "File::Copy" : "0",
-            "FileHandle" : "0",
             "Getopt::Long" : "2.38",
             "IO::CaptureOutput" : "1.1102",
             "Log::Handler" : "0",
@@ -51,5 +50,5 @@
       }
    },
    "release_status" : "testing",
-   "version" : "0.20_04"
+   "version" : "0.20_05"
 }

@@ -4,6 +4,7 @@ use warnings ;
 use feature ':5.10';
 use Cwd ;
 use Config::Std;
+use Config::General;
 use IhasQuery ;
 use File::Copy ;
 use Test::Exception ;
@@ -31,7 +32,13 @@ my $pwd = getcwd;
 my $tdata = "$pwd/tdata" ;
 
 # Load named config file into specified hash...
-read_config "$pwd/t2/test.conf" => my %config;
+my %config = () ;
+# If yaml use read_config
+#read_config "$pwd/t2/test.conf" => %config;
+# If apache style config use general.
+my $conf = new Config::General( "$pwd/t2/test.conf" );
+%config = $conf->getall;
+
 
 # Extract the value of a key/value pair from a specified section...
 my $dbistring  = $config{DBI}{dbistring};
@@ -83,13 +90,19 @@ sub RunTest {
 		= capture_exec( $params{ command } ) ;
 	return %r ;	
 	}
+	
 
-#my $config1 = "$pwd/t2/script1.params" ;
+
+my $config1 = "$pwd/t2/script1.params" ;
 #my $config2 = "$pwd/t2/script2.params" ;
 
 ok( require( $script ) , 'Load script successfully' ) or exit ;
+# throws_ok( &PGBCmd::Main(), qr/division by zero/,
+    # 'zero caught okay' );	
 
-# my $command3 = "$script --read $config1" ; 
+my $command3 = "$script --read $config1" ; 
+
+
 # my $command4 = "$script --read $config2" ; 
 
 my %t1 = RunTest( 'command' => $script ) ;

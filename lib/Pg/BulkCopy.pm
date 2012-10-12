@@ -6,7 +6,6 @@ use Time::Piece ;
 use DBI ;
 use File::Copy ;
 use Log::Handler ;
-#use FileHandle; 
 
 =pod
 
@@ -21,7 +20,7 @@ Version 0.20
 =cut
 
 package Pg::BulkCopy;
-our $VERSION = '0.20_04' ;
+our $VERSION = '0.20_05' ;
 use Moose ;
 	has 'dbistring' => ( isa => 'Str', is => 'rw', required => 1, ) ;
 	has 'filename' => ( isa => 'Str', is => 'rw', required => 1, ) ;	

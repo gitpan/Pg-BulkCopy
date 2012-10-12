@@ -1,11 +1,14 @@
 #! /usr/bin/perl
 
+package PGBCmd ;
+{
 use strict ;
 #use warnings ;
 use 5.012;
 use Getopt::Long;
 use Cwd ;
 use Config::Std;
+use Config::Any;
 use strict ;
 use Pg::BulkCopy ;
 
@@ -132,7 +135,7 @@ say $BCP->errcode() ;  say $BCP->errstr() ;
 
 
 } ; #main
-
-main( @ARGV ) unless caller() ;
+} # PGBCmd
+&PGBCmd::main( @ARGV ) unless caller() ;
 
 1 ;
