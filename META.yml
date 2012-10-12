@@ -19,7 +19,7 @@ no_index:
     - inc
 requires:
   Carp::Always: 0.12
-  Config::Any: 0.23
+  Config::Any: 0
   Config::General: 2.5
   Config::Std: 0.9
   Cwd: 3.33
@@ -32,4 +32,4 @@ requires:
   Moose: 2
   Test::Exception: 0.31
   Test::More: 0.98
-version: 0.20_05
+version: 0.20_06
