@@ -20,7 +20,7 @@ Version 0.20
 =cut
 
 package Pg::BulkCopy;
-our $VERSION = '0.20_06' ;
+our $VERSION = '0.20_07' ;
 use Moose ;
 	has 'dbistring' => ( isa => 'Str', is => 'rw', required => 1, ) ;
 	has 'filename' => ( isa => 'Str', is => 'rw', required => 1, ) ;	
@@ -292,6 +292,14 @@ $self->_DBG( 2, "Return Value: $returnstatus" ) ;
 	return ( $returnstatus ) ;
 }	 #LOAD
 
+=head1 IMPORTANT NOTE on INSTALLATION
+
+If you are installing this through cpan please be aware that you will not be running any tests. 
+The tests are in t2 and not run by any of the CPAN clients. To run the tests you need to download 
+the test data L<http://www.cpan.org/authors/id/B/BR/BRAINBUZ/Pg-BulkCopyTest-0.16.tar.gz>. Pg::BulkCopy requires postgres to be installed on the same machine
+although it uses dbi it requires a shared directory that postgres and it can both write to. If you 
+do not want to setup and run the tests it is recommended that you at least perform a validation trial
+
 =head1 pg bulkCopy.pl
 
 The utility script pg_BulkCopy.pl was written to provide postgreSQL with a convient bulk loading utility. The script is implemented as a wrapper and a module (pg_BulkCopy.pl) so that other programmers may easily incorporate the two useful methods LOAD and DUMP directly into other perl scripts. 
@@ -553,7 +561,7 @@ L<http://search.cpan.org/dist/Pg-BulkCopy/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010 John Karr.
+Copyright 2010,2012 John Karr.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

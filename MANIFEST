@@ -7,7 +7,8 @@ license_gpl_3.0.txt
 META.yml
 README
 t/00-load.t
-t/01-load.t
+t2/00-load.t
+t2/01-load.t
 t/boilerplate.t
 t/manifest.t
 t/pod-coverage.t

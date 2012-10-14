@@ -1,7 +1,7 @@
 #!perl 
 use strict ;
 use warnings ;
-use feature ':5.10';
+use 5.012;
 use Cwd ;
 use Config::Std;
 use Config::General;
@@ -10,7 +10,7 @@ use File::Copy ;
 use Test::Exception ;
 use IO::CaptureOutput qw/capture_exec/ ;
 
-use Test::More tests => 17;
+use Test::More ;#tests => 17;
 #use Test::More 'no_plan' ;
 
 diag( "Testing Pg::BulkCopy $Pg::BulkCopy::VERSION, Perl $], $^X" );
@@ -30,6 +30,10 @@ BEGIN {
 # get pwd, should be distribution directory where harness.sh was invoked from.
 my $pwd = getcwd;
 my $tdata = "$pwd/tdata" ;
+if ( stat '/tmp/BULKCOPY.JOB' ) {
+	unlink '/tmp/BULKCOPY.JOB' ;
+	 die "Cant delete file from prior run. Try \"sudo rm /tmp/BULKCOPY.JOB\"" if ( stat '/tmp/BULKCOPY.JOB' ) ;
+	 }
 
 # Load named config file into specified hash...
 my %config = () ;
@@ -92,18 +96,12 @@ sub RunTest {
 	}
 	
 
+ok( require( $script ) , 'Load script successfully' ) or exit ;
 
 my $config1 = "$pwd/t2/script1.params" ;
-#my $config2 = "$pwd/t2/script2.params" ;
-
-ok( require( $script ) , 'Load script successfully' ) or exit ;
-# throws_ok( &PGBCmd::Main(), qr/division by zero/,
-    # 'zero caught okay' );	
-
+my $config2 = "$pwd/t2/script2.params" ;
 my $command3 = "$script --read $config1" ; 
-
-
-# my $command4 = "$script --read $config2" ; 
+my $command4 = "$script --read $config2" ; 
 
 my %t1 = RunTest( 'command' => $script ) ;
 #say "Raw test results \n******\nstdout $t1{ stdout } \nstderr $t1{ stderr }\n******" ;
@@ -114,7 +112,7 @@ my %t2 = RunTest( 'command' => "$script -?" ) ;
 ok( $t2{ stderr } =~ m/information about how to use pg_bulkcopy.pl./i, 
 	'A question mark -? should get the same response.' ) ;
 
-my $config1 = qq |
+$config1 = qq |
 [options]
 filename : blob1.tsv
 load : 1
@@ -135,6 +133,9 @@ debug : 2
 trunc : 1
 | ;
 
+
+#done_testing() ; exit ;
+
 my $handle_on_testing = Pg::BulkCopy->new(
     dbistring => $dbistring,
     dbiuser   => $dbiuser,
@@ -146,15 +147,21 @@ my $handle_on_testing = Pg::BulkCopy->new(
     table     => 'testing', );
 my $QueryHandleTesting = IhasQuery->new( $handle_on_testing->CONN() , 'testing' ) ; 
 
+note( qq {
+my %t3 = RunTest( 
+	'command' => "$script --read $pwd/config1",
+	'read' => "$pwd/config1",
+	'readtext' => $config1 , } ) ;
+
 my %t3 = RunTest( 
 	'command' => "$script --read $pwd/config1",
 	'read' => "$pwd/config1",
 	'readtext' => $config1 , ) ;
 # say "Raw test results \n******\nstdout $t3{ stdout } \nstderr $t3{ stderr }\nsuccess? $t3{ success}
 	# exit_code   $t3{ exit_code}\n******" ;	
-ok( $t3{ success } == 1 , 'Execution should report success.' );
-ok( $t3{ exit_code} == 0 , 'Should have a 0 exit code.' );
-ok( $t3{ stdout } =~ m/iscsv 0/, 'Should spew icsv 0' ) ;
+is( $t3{ success } , 1 , 'Execution should report success.' );
+is( $t3{ exit_code} , 0 , 'Should have a 0 exit code.' );
+like( $t3{ stdout } , qr/iscsv 0/, 'Should spew icsv 0' ) ;
 ok( $t3{ stderr } =~ m/TRUNCATE testing/i, 
 	'stderr should inform us that it will truncate the table' ) ;
 is ( $QueryHandleTesting->count() , 15631 , "Should load 15631" ) ;
@@ -197,7 +204,7 @@ my $commands4 = "@commands4" ;
 # say $commands4 ; exit ;
 
 SKIP: {
-	skip( 'Fixing CSV is a todo for later than this release' ) ;
+	skip( 'Fixing CSV is a todo for later than this release' ,1 ) ;
 TODO: {
 local $TODO = 'Until some csv issues are sorted out expect some problems' ;
 my %t4 = RunTest( 'command' => $commands4 ) ;
@@ -247,3 +254,5 @@ while (<EXP>) {
 	}
 is( $foundtkk, 1, 'Should find TKK from the second file loaded in dump.' ) ;
 is( $foundcockroach, 1, 'Should find cockroach from the first file loaded in dump.' ) ;	
+
+done_testing() ;

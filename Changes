@@ -1,7 +1,7 @@
 Revision history for Pg-BulkCopy
 
 0.20    8 October 2012
-	Switched Config File format to Config::General.
+	Switched Testing Config File format to Config::General.
 	Switched tests to DBIx::Simple to eliminate dependency
 	on depracated dbi wrapper.
 0.17	February 2011
