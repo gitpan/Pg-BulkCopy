@@ -15,12 +15,12 @@ Pg::BulkCopy - Bulk Data Load/ Dump for Postgres.
 
 =head1 VERSION
 
-Version 0.20
+Version 0.21
 
 =cut
 
 package Pg::BulkCopy;
-our $VERSION = '0.20_07' ;
+our $VERSION = '0.21' ;
 use Moose ;
 	has 'dbistring' => ( isa => 'Str', is => 'rw', required => 1, ) ;
 	has 'filename' => ( isa => 'Str', is => 'rw', required => 1, ) ;	
@@ -304,8 +304,6 @@ do not want to setup and run the tests it is recommended that you at least perfo
 
 The utility script pg_BulkCopy.pl was written to provide postgreSQL with a convient bulk loading utility. The script is implemented as a wrapper and a module (pg_BulkCopy.pl) so that other programmers may easily incorporate the two useful methods LOAD and DUMP directly into other perl scripts. 
 
-The advantage of this script over other scripts that have been written for this purpose is that if you can connect to and perform insert and delete operations on your database through the standard DBI interface (and it shouldn't matter which of the several postgres driver's you are using), pg_BulkCopy should just work.
-
 The DUMP Method invokes postgres' COPY TO command, and does nothing useful in addition except copying the dump from the temp directory (because postgres may not have permission on where you want the file). You can choose Tab Delimited Text or CSV with whatever delimiter you want and a Null string of your choice.
 
 The LOAD Method is much more interesting, it breaks the load file into chunks of 10000 (configurable) records in the temp directory and tries to COPY FROM, if it fails, it parses the error message for the line number, then it removes the failed line to a rejects file and tries again. As with DUMP you can select the options supported by the postgres COPY command, you can also set a limit on bad records (default is 10).
@@ -365,7 +363,7 @@ Command Line to load values from bulkcopy.conf but provide or override some valu
 
 =head3 dbistr, dbiuser, dbipass
 
-These are the parameters needed to establish a dbi connection. Please refer to the documentation establishing a database connection with dbi.
+These are the parameters needed to establish a dbi connection. 
 
 =head3 filename, table
 
@@ -379,7 +377,7 @@ Boolean values of 0 or 1. An B<iscsv> value of 1 indicates the file is csv. The 
 
 B<workingdir> is where the file, reject and log files will be written, unless the full path/filename is specified it is also expected to find/write the file for the operation here. B<errorlog> is the name of a file to write information about problems to, this will default to <filename>.log. 
 
-B<tempdir> where the temporary working files will be written to. tempdir defaults to /tmp. Do not overlook tempdir the user executing the script and the uid that postgres is running under must have rw permissions here and the default creation mask must permit access to each other's newly created files! 
+B<tempdir> where the temporary working files will be written to. tempdir defaults to /tmp. Do not overlook tempdir, the user executing the script and the uid that postgres is running under must have rw permissions here and the default creation mask must permit access to each other's newly created files! 
 
 =head3 batchsize, maxerrors, debug
 
@@ -392,7 +390,7 @@ B<debug> can disable or increase the amount of error logging done. 0 disables er
 
 =head1 Module Pg::BulkCopy 
 
-All methods used by pg_BulkCopy.pl are provided by Pg::BulkCopy. The method names follow the convention of explicitely defined methods in caps and methods provided by Moose in lowercase.
+All methods used by pg_BulkCopy.pl are provided by Pg::BulkCopy. The method names follow the convention of explicitely defined methods in caps and methods created by Moose in lowercase.
 
 =head2 Systems Supported
 
@@ -488,7 +486,7 @@ To deal proactively with permissions issues I recommend the following steps. Che
 
 =head2 Other Issues
 
-There is currently an issue I haven't resolved with a quoted csv input test file. The next features I expect to work on involve supporting csv headers and field reordering, which will also make the feature available for tsv files.
+There is currently an issue I haven't resolved with a quoted csv input test file. The next features I expect to work on involve supporting csv headers and field reordering, which will also make the feature available for tsv files. 
 
 =head1 Options
 
@@ -511,8 +509,6 @@ Edit the file t2/test.conf. You will need to provide the necessary dsn values fo
 
 If necessary modify harness.sh from the distribution directory as appropriate and execute it to run the tests.
 
-
-
 =head1 AUTHOR
 
 John Karr, C<< <brainbuz at brainbuz.org> >>
@@ -520,8 +516,7 @@ John Karr, C<< <brainbuz at brainbuz.org> >>
 =head1 BUGS
 
 Please report any bugs or feature requests to C<bug-pg-bulkcopy at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Pg-BulkCopy>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Pg-BulkCopy>.  I will be notified, and then you'll automatically be notified of progress on your bug as I make changes.
 
 
 
